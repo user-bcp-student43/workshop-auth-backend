@@ -20,4 +20,36 @@ class AuthResourceTest {
                 .body("user.username", is("student"))
                 .body("token", notNullValue());
     }
+
+    @Test
+    void rejectsSqlInjectionLikeUsername() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {"username":"student' OR '1'='1' -- ","password":"invalid"}
+                        """)
+                .when().post("/auth/login")
+                .then()
+                .statusCode(401);
+    }
+
+    @Test
+    void rejectsLoginWithoutUsername() {
+        given()
+                .contentType("application/json")
+                .body("{\"password\":\"invalid\"}")
+                .when().post("/auth/login")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void rejectsLoginWithoutPassword() {
+        given()
+                .contentType("application/json")
+                .body("{\"username\":\"student\"}")
+                .when().post("/auth/login")
+                .then()
+                .statusCode(400);
+    }
 }
